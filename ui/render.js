@@ -1,16 +1,14 @@
 import { gameState } from "../engine/gameState.js";
 import { cardDB } from "../data/cards.js";
-import { dispatch } from "../engine/engine.js";
-import { getEnergy } from "../engine/engine.js";
-import { canPlay } from "../engine/engine.js";
+import { dispatch, getEnergy, canPlay } from "../engine/engine.js";
 
+/* カード描画 */
 function createCardView(cardId){
 
   const card = gameState.cards[cardId];
   const def = cardDB[card.cardId];
 
   const div = document.createElement("div");
-
   div.className = "card";
 
   div.innerHTML =
@@ -24,263 +22,223 @@ function createCardView(cardId){
 
 }
 
-// メイン描画関数
-export function render(){
+/* スロット描画 */
+function renderSlots(containerId, slots, clickable=false, playType=null){
+
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+
   const player = gameState.players[gameState.currentPlayer];
-  const opponent = gameState.players[1 - gameState.currentPlayer];
 
-  // 自分の情報
-  document.getElementById("ap").innerText = player.actionPoints;
-  document.getElementById("energyTotal").innerText = getEnergy(player);
+  for(let i=0;i<slots.length;i++){
 
-  renderFront(player);
-  renderEnergy(player);
-  renderHand(player);
-  renderLife(player);
-
-  renderPlayerRemove(player);
-  renderPlayerTrash(player);
-
-  // 相手フィールド表示
-  renderOpponentFront(opponent);
-  renderOpponentEnergy(opponent);
-  renderOpponentLife(opponent);
-
-  renderOpponentRemove(opponent);
-  renderOpponentTrash(opponent);
-
-  // 選択中カード表示
-  const sel = document.getElementById("selected");
-  if(gameState.selectedCard === null){
-    sel.innerText = "none";
-  } else {
-    const card = gameState.cards[gameState.selectedCard];
-    const def = cardDB[card.cardId];
-    sel.innerText = def.name;
-  }
-}
-
-// 自分のフロントライン
-function renderFront(player){
-  const front = document.getElementById("front");
-  front.innerHTML="";
-
-  for(let i=0;i<4;i++){
     const div = document.createElement("div");
     div.className="slot";
 
-    const cardId = player.frontLine[i];
+    const cardId = slots[i];
+
     if(cardId !== null){
       div.appendChild(createCardView(cardId));
     }
 
-    // 選択中カードを置ける場所は緑表示
-    if(gameState.selectedCard !== null){
+    if(clickable && gameState.selectedCard !== null){
       if(cardId === null && canPlay(player, gameState.selectedCard)){
         div.classList.add("slot-playable");
       }
     }
 
-    div.onclick = ()=>{
-      if(gameState.selectedCard === null) return;
+    if(clickable){
+      div.onclick = ()=>{
 
-      const success = dispatch({
-        type:"play_front",
-        card:gameState.selectedCard,
-        slot:i
-      });
+        if(gameState.selectedCard === null) return;
 
-      if(success){
-        gameState.selectedCard=null;
-      }
+        const success = dispatch({
+          type: playType,
+          card: gameState.selectedCard,
+          slot: i
+        });
 
-      render();
-    };
+        if(success){
+          gameState.selectedCard = null;
+        }
 
-    front.appendChild(div);
-  }
-}
-
-// 自分のエナジーライン
-function renderEnergy(player){
-  const energy = document.getElementById("energy");
-  energy.innerHTML="";
-
-  for(let i=0;i<4;i++){
-    const div = document.createElement("div");
-    div.className="slot";
-
-    const cardId = player.energyLine[i];
-    if(cardId !== null){
-      div.appendChild(createCardView(cardId));
+        render();
+      };
     }
 
-    // 選択中カードを置ける場所は緑表示
-    if(gameState.selectedCard !== null){
-      if(cardId === null && canPlay(player, gameState.selectedCard)){
-        div.classList.add("slot-playable");
-      }
-    }
+    container.appendChild(div);
 
-    div.onclick = ()=>{
-      if(gameState.selectedCard === null) return;
-
-      const success = dispatch({
-        type:"play_energy",
-        card:gameState.selectedCard,
-        slot:i
-      });
-
-      if(success){
-        gameState.selectedCard=null;
-      }
-
-      render();
-    };
-
-    energy.appendChild(div);
   }
+
 }
 
-// 自分の手札
+/* ゾーン表示 */
+function renderZone(containerId, label, cardList){
+
+  const container = document.getElementById(containerId);
+  container.innerHTML="";
+
+  const zone = document.createElement("div");
+  zone.className="card";
+
+  zone.innerHTML =
+    "<b>"+label+"</b><br>"+
+    "Cards: "+cardList.length;
+
+  zone.onclick = ()=> showZonePopup(label, cardList);
+
+  container.appendChild(zone);
+
+}
+
+/* ポップアップ表示 */
+function showZonePopup(label, cardList){
+
+  const overlay = document.getElementById("overlay");
+  const popup = document.getElementById("popup");
+  const content = document.getElementById("popup-content");
+
+  content.innerHTML = "";
+
+  const title = document.createElement("h3");
+  title.innerText = label;
+  content.appendChild(title);
+
+  const list = document.createElement("div");
+  list.style.display="flex";
+  list.style.flexWrap="wrap";
+  list.style.gap="6px";
+
+  for(const cardId of cardList){
+
+    const cardDiv = createCardView(cardId);
+
+    cardDiv.onclick = ()=>{
+      const def = cardDB[gameState.cards[cardId].cardId];
+      alert(`Card: ${def.name}\nAP:${def.apCost}\nEN:${def.energyCost}\nPW:${def.power}`);
+    };
+
+    list.appendChild(cardDiv);
+
+  }
+
+  content.appendChild(list);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.innerText="Close";
+  closeBtn.onclick = closePopup;
+
+  content.appendChild(closeBtn);
+
+  overlay.style.display="block";
+
+}
+
+/* ポップアップ閉じる */
+function closePopup(){
+
+  const overlay = document.getElementById("overlay");
+  overlay.style.display="none";
+
+}
+
+/* 手札 */
 function renderHand(player){
+
   const hand = document.getElementById("hand");
   hand.innerHTML = "";
 
   for(const cardId of player.hand){
+
     const dispcard = createCardView(cardId);
     const def = cardDB[gameState.cards[cardId].cardId];
 
-    // 選択中カード
     if(cardId === gameState.selectedCard){
       dispcard.classList.add("card-selected");
     }
 
-    // AP不足カードは暗く
     if(player.actionPoints < def.apCost){
       dispcard.classList.add("card-disabled");
     }
 
     dispcard.onclick = ()=>{
+
       if(player.actionPoints < def.apCost){
         alert("APが足りません");
         return;
       }
 
-      // 同じカードを再クリックでキャンセル
       if(gameState.selectedCard === cardId){
         gameState.selectedCard=null;
-      } else {
+      }else{
         gameState.selectedCard=cardId;
       }
 
       render();
+
     };
 
     hand.appendChild(dispcard);
+
   }
+
 }
 
-// 自分のライフ
-function renderLife(player){
-  const lifeDiv = document.getElementById("life");
+/* ライフ */
+function renderLife(player, containerId){
+  const lifeDiv = document.getElementById(containerId);
   lifeDiv.innerHTML = "";
-  for(let i=0; i<player.life; i++){
+
+  for(const cardId of player.life){
     const div = document.createElement("div");
     div.className = "life-card";
     lifeDiv.appendChild(div);
   }
 }
 
-// 相手のフロントライン（表示のみ）
-function renderOpponentFront(opponent){
-  const front = document.getElementById("opponent-front");
-  front.innerHTML = "";
+/* 選択カード表示 */
+function updateSelected(){
 
-  for(let i=0;i<4;i++){
-    const div = document.createElement("div");
-    div.className = "slot";
+  const sel = document.getElementById("selected");
 
-    const cardId = opponent.frontLine[i];
-    if(cardId !== null){
-      div.appendChild(createCardView(cardId));
-    }
-
-    front.appendChild(div);
+  if(gameState.selectedCard === null){
+    sel.innerText="none";
+    return;
   }
+
+  const card = gameState.cards[gameState.selectedCard];
+  const def = cardDB[card.cardId];
+
+  sel.innerText = def.name;
+
 }
 
-function renderPlayerTrash(player){
-  const container = document.getElementById("player-trash");
-  container.innerHTML = "";
-  for(const cardId of player.trash){
-    const cardDiv = createCardView(cardId);
-    cardDiv.onclick = ()=> showCardInfo(cardId);
-    container.appendChild(cardDiv);
-  }
-}
+/* メイン描画 */
+export function render(){
 
-function renderPlayerRemove(player){
-  const container = document.getElementById("player-remove");
-  container.innerHTML = "";
-  for(const cardId of player.remove){
-    const cardDiv = createCardView(cardId);
-    cardDiv.onclick = ()=> showCardInfo(cardId);
-    container.appendChild(cardDiv);
-  }
-}
+  const player = gameState.players[gameState.currentPlayer];
+  const opponent = gameState.players[1 - gameState.currentPlayer];
 
-// 相手のエナジーライン（表示のみ）
-function renderOpponentEnergy(opponent){
-  const energy = document.getElementById("opponent-energy");
-  energy.innerHTML = "";
+  document.getElementById("ap").innerText = player.actionPoints;
+  document.getElementById("energyTotal").innerText = getEnergy(player);
 
-  for(let i=0;i<4;i++){
-    const div = document.createElement("div");
-    div.className = "slot";
+  renderSlots("front", player.frontLine, true, "play_front");
+  renderSlots("energy", player.energyLine, true, "play_energy");
 
-    const cardId = opponent.energyLine[i];
-    if(cardId !== null){
-      div.appendChild(createCardView(cardId));
-    }
+  renderSlots("opponent-front", opponent.frontLine);
+  renderSlots("opponent-energy", opponent.energyLine);
 
-    energy.appendChild(div);
-  }
-}
+  renderHand(player);
 
-// 相手のライフ
-function renderOpponentLife(opponent){
-  const lifeDiv = document.getElementById("opponent-life");
-  lifeDiv.innerHTML = "";
-  for(let i=0; i<opponent.life; i++){
-    const div = document.createElement("div");
-    div.className = "life-card";
-    lifeDiv.appendChild(div);
-  }
-}
+  renderLife(player, "life");
+  renderLife(opponent, "opponent-life");
 
-function renderOpponentTrash(opponent){
-  const container = document.getElementById("opponent-trash");
-  container.innerHTML = "";
-  for(const cardId of opponent.trash){
-    const cardDiv = createCardView(cardId);
-    cardDiv.onclick = ()=> showCardInfo(cardId);
-    container.appendChild(cardDiv);
-  }
-}
+  renderZone("player-trash","Trash",player.trash);
+  renderZone("player-remove","Removed",player.remove);
 
-function renderOpponentRemove(opponent){
-  const container = document.getElementById("opponent-remove");
-  container.innerHTML = "";
-  for(const cardId of opponent.remove){
-    const cardDiv = createCardView(cardId);
-    cardDiv.onclick = ()=> showCardInfo(cardId);
-    container.appendChild(cardDiv);
-  }
-}
+  renderZone("opponent-trash","Trash",opponent.trash);
+  renderZone("opponent-remove","Removed",opponent.remove);
 
-// カード情報をアラート表示
-function showCardInfo(cardId){
-  const def = cardDB[gameState.cards[cardId].cardId];
-  alert(`Card: ${def.name}\nAP: ${def.apCost}\nEN: ${def.energyCost}\nPW: ${def.power}`);
+  updateSelected();
+
 }

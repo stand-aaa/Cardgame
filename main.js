@@ -36,6 +36,21 @@ function draw(player){
 
 }
 
+function setupLife(player){
+
+  const p = gameState.players[player];
+
+  for(let i=0;i<7;i++){
+
+    const cardId = Math.random() < 0.5 ? 1 : 2;
+    const instanceId = createCard(cardId, player);
+
+    p.life.push(instanceId);
+
+  }
+
+}
+
 /* 初期化 */
 function init(){
 
@@ -53,17 +68,24 @@ function init(){
   setupDeck(0);
   setupDeck(1);
 
+  /* ライフ設定 */
+  setupLife(0);
+  setupLife(1);
+
   /* 初期手札 */
   draw(0);
   draw(0);
   draw(0);
+  draw(0);
+  draw(0);
+
 
   draw(1);
   draw(1);
   draw(1);
 
   // プレイヤー0のトラッシュにランダムで3枚追加
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 30; i++) {
     const randomCardId = Object.keys(cardDB)[Math.floor(Math.random() * Object.keys(cardDB).length)];
     // gameState.cardsにカードを作る
     const cardInstanceId = `trash-${i}`;
@@ -72,7 +94,7 @@ function init(){
   }
 
   // プレイヤー0のリムーブにランダムで2枚追加
-  for (let i = 0; i < 2; i++) {
+  for (let i = 0; i < 20; i++) {
     const randomCardId = Object.keys(cardDB)[Math.floor(Math.random() * Object.keys(cardDB).length)];
     const cardInstanceId = `remove-${i}`;
     gameState.cards[cardInstanceId] = { cardId: randomCardId };

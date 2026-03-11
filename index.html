@@ -103,10 +103,10 @@
 
     <!-- 中央: フィールド -->
     <div>
-      <h3>Front Line</h3>
-      <div id="opponent-front" class="row"></div>
       <h3>Energy Line</h3>
       <div id="opponent-energy" class="row"></div>
+      <h3>Front Line</h3>
+      <div id="opponent-front" class="row"></div>
     </div>
 
     <!-- 右側: ライフ -->
@@ -114,37 +114,74 @@
   </div>
 </div>
 
-<!-- 自分フィールド -->
 <div class="field-container" id="player-container">
   <h2>Player</h2>
-  <div style="display: flex; align-items: flex-start;">
-    <!-- 左側: ライフ -->
-    <div id="life" style="margin-right: 10px;"></div>
-
-    <!-- 中央: フィールド + 手札 -->
+  <!-- フィールド -->
+  <div style="display:flex; align-items:flex-start;">
+    <!-- ライフ -->
+    <div id="life" style="margin-right:10px;"></div>
+    <!-- フィールド -->
     <div>
-      AP: <span id="ap"></span> / Energy: <span id="energyTotal"></span>
+      AP: <span id="ap"></span> /
+      Energy: <span id="energyTotal"></span>
       <h3>Front Line</h3>
       <div id="front" class="row"></div>
       <h3>Energy Line</h3>
       <div id="energy" class="row"></div>
-
-      <h3>Hand</h3>
-      Selected Card: <span id="selected">none</span>
-      <div id="hand"></div>
-
-      <button id="endTurn">End Turn</button>
     </div>
-
-    <!-- 右側: リムーブ / トラッシュ -->
-    <div style="margin-left: 10px; display: flex; flex-direction: column; align-items: center;">
+    <!-- トラッシュ / リムーブ -->
+    <div style="margin-left:10px; display:flex; flex-direction:column; align-items:center;">
       <h4>Removed</h4>
       <div id="player-remove" class="row"></div>
       <h4>Trash</h4>
       <div id="player-trash" class="row"></div>
     </div>
   </div>
+
+  <div>
+    <h3>Hand</h3>
+    Selected Card: <span id="selected">none</span>
+    <div id="hand"></div>
+  </div>
+  <button id="endTurn">End Turn</button>
+
 </div>
+
+<div id="overlay"
+onclick="this.style.display='none'"
+style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.6);
+z-index:999;
+">
+
+  <div id="popup"
+  onclick="event.stopPropagation()"
+  style="
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:white;
+  padding:20px;
+  border:2px solid black;
+  max-width:600px;
+  max-height:500px;
+  overflow:auto;
+  ">
+
+    <div id="popup-content"></div>
+
+  </div>
+
+</div>
+
+
 
 <script type="module" src="main.js"></script>
 </body>

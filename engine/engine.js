@@ -1,6 +1,7 @@
 import { gameState } from "./gameState.js";
 import { cardDB } from "../data/cards.js";
 import { render } from "../ui/render.js";
+import { moveCard } from "./zones.js";
 
 export function dispatch(action){
 
@@ -28,8 +29,27 @@ export function dispatch(action){
 }
 
 function endTurn(){
+
+  const playerIndex = gameState.currentPlayer;
+  const player = gameState.players[playerIndex];
+
   // カード選択をキャンセル
   gameState.selectedCard = null;
+
+  /* ライフ → 手札 */
+  if(player.life.length > 0){
+
+    const cardId = player.life[player.life.length - 1];
+
+    console.log("life before:", player.life);
+    console.log("hand before:", player.hand);
+
+    moveCard(playerIndex, cardId, "life", "hand");
+
+    console.log("life after:", player.life);
+    console.log("hand after:", player.hand);
+
+  }
 
   // プレイヤー交代
   gameState.currentPlayer = 1 - gameState.currentPlayer;

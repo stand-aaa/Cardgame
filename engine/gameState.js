@@ -11,7 +11,7 @@ export const gameState = {
 
   players: [
     {
-      life: 7,
+      life: [],
 
       actionPoints: 0,
       playerTurn: 0,
@@ -29,7 +29,7 @@ export const gameState = {
     },
 
     {
-      life: 7,
+      life: [],
 
       actionPoints: 0,
       playerTurn: 0,
