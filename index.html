@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Union Arena Test</title>
+
+<style>
+.slot{
+  width:110px;
+  height:140px;
+  border:1px solid black;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  font-size:12px;
+  margin:5px;
+}
+
+.card{
+  width:100px;
+  height:140px;
+  border:1px solid black;
+  border-radius:5px;
+  padding:5px;
+  margin:4px;
+  background:white;
+  font-size:12px;
+}
+
+.card-selected{
+  border:3px solid blue;
+  background:#e0f0ff;
+}
+
+.card-disabled{
+  opacity:0.4;
+  filter:grayscale(80%);
+}
+
+.slot-playable{
+  border:3px solid green;
+  background:#eaffea;
+}
+
+.row{
+  display:flex;
+  margin-bottom: 10px;
+}
+
+/* 手札横並び */
+#hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+/* 各プレイヤーのコンテナ */
+.field-container {
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 10px;
+}
+
+#life, #opponent-life {
+  display: flex;
+  flex-direction: column; /* 上から下に並べる */
+}
+
+.life-card {
+  width: 40px;
+  height: 60px;
+  border: 1px solid rgb(255, 0, 0);
+  border-radius: 4px;
+  background: #ff0000; /* 裏向き色 */
+  margin-bottom: 2px;
+}
+
+#player-remove, #player-trash,
+#opponent-remove, #opponent-trash {
+  display: flex;
+  flex-direction: row;  /* 横にカードを並べる */
+  margin-bottom: 5px;
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- 相手プレイヤー -->
+<div class="field-container" id="opponent-container">
+  <h2>Opponent</h2>
+  <div style="display: flex; align-items: flex-start;">
+    <!-- 左側: リムーブ / トラッシュ -->
+    <div style="margin-right: 10px; display: flex; flex-direction: column; align-items: center;">
+      <h4>Trash</h4>
+      <div id="opponent-trash" class="row"></div>
+      <h4>Removed</h4>
+      <div id="opponent-remove" class="row"></div>
+    </div>
+
+    <!-- 中央: フィールド -->
+    <div>
+      <h3>Front Line</h3>
+      <div id="opponent-front" class="row"></div>
+      <h3>Energy Line</h3>
+      <div id="opponent-energy" class="row"></div>
+    </div>
+
+    <!-- 右側: ライフ -->
+    <div id="opponent-life" style="margin-left: 10px;"></div>
+  </div>
+</div>
+
+<!-- 自分フィールド -->
+<div class="field-container" id="player-container">
+  <h2>Player</h2>
+  <div style="display: flex; align-items: flex-start;">
+    <!-- 左側: ライフ -->
+    <div id="life" style="margin-right: 10px;"></div>
+
+    <!-- 中央: フィールド + 手札 -->
+    <div>
+      AP: <span id="ap"></span> / Energy: <span id="energyTotal"></span>
+      <h3>Front Line</h3>
+      <div id="front" class="row"></div>
+      <h3>Energy Line</h3>
+      <div id="energy" class="row"></div>
+
+      <h3>Hand</h3>
+      Selected Card: <span id="selected">none</span>
+      <div id="hand"></div>
+
+      <button id="endTurn">End Turn</button>
+    </div>
+
+    <!-- 右側: リムーブ / トラッシュ -->
+    <div style="margin-left: 10px; display: flex; flex-direction: column; align-items: center;">
+      <h4>Removed</h4>
+      <div id="player-remove" class="row"></div>
+      <h4>Trash</h4>
+      <div id="player-trash" class="row"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
