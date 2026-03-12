@@ -47,6 +47,11 @@
   background:#eaffea;
 }
 
+.slot-attackable{
+  border: 3px solid orange;
+  background: #fff8e0;
+}
+
 .slot-blockable{
   outline:3px solid cyan;
 }
@@ -133,6 +138,11 @@
 
 <div class="field-container" id="player-container">
   <h2>Player</h2>
+  <div>TURN: <span id="turn"></span></div>
+  <div>PHASE: <span id="phase"></span></div>
+  <div id="controls">
+  <button id="phaseButton">Next</button>
+  </div>
   <!-- フィールド -->
   <div style="display:flex; align-items:flex-start;">
     <!-- ライフ -->
@@ -141,7 +151,11 @@
     <div>
       AP: <span id="ap"></span> /
       Energy: <span id="energyTotal"></span>
-      <h3>Front Line</h3>
+      <!-- Front Line 見出し＋ライフで受ける ボタン -->
+      <h3>
+        Front Line
+        <button id="takeDamageBtn" style="display:none; margin-left:10px;">ライフで受ける</button>
+      </h3>
       <div id="front" class="row"></div>
       <h3>Energy Line</h3>
       <div id="energy" class="row"></div>
@@ -160,14 +174,7 @@
     Selected Card: <span id="selected">none</span>
     <div id="hand"></div>
   </div>
-  <div id="controls">
-    <button id="phaseButton">Next</button>
-  </div>
-
 </div>
-
-<div>TURN: <span id="turn"></span></div>
-<div>PHASE: <span id="phase"></span></div>
 
 <div id="attackMenu" class="context-menu"></div>
 
