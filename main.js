@@ -84,6 +84,7 @@ function init(){
   draw(1);
   draw(1);
 
+    /* デバッグ用 */
   // プレイヤー0のトラッシュにランダムで3枚追加
   for (let i = 0; i < 30; i++) {
     const randomCardId = Object.keys(cardDB)[Math.floor(Math.random() * Object.keys(cardDB).length)];
@@ -93,6 +94,7 @@ function init(){
     gameState.players[0].trash.push(cardInstanceId);
   }
 
+    /* デバッグ用 */
   // プレイヤー0のリムーブにランダムで2枚追加
   for (let i = 0; i < 20; i++) {
     const randomCardId = Object.keys(cardDB)[Math.floor(Math.random() * Object.keys(cardDB).length)];
@@ -107,10 +109,5 @@ function init(){
   render();
 
 }
-
-/* ターン終了ボタン */
-document
-  .getElementById("endTurn")
-  .onclick = () => dispatch({ type: "end_turn" });
 
 init();

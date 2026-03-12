@@ -28,6 +28,10 @@
   font-size:12px;
 }
 
+.card-rested{
+  transform: rotate(90deg);
+}
+
 .card-selected{
   border:3px solid blue;
   background:#e0f0ff;
@@ -82,6 +86,15 @@
   display: flex;
   flex-direction: row;  /* 横にカードを並べる */
   margin-bottom: 5px;
+}
+
+.context-menu{
+  position:fixed;
+  background:#222;
+  border:1px solid #555;
+  padding:6px;
+  display:none;
+  z-index:1000;
 }
 </style>
 
@@ -143,9 +156,16 @@
     Selected Card: <span id="selected">none</span>
     <div id="hand"></div>
   </div>
-  <button id="endTurn">End Turn</button>
+  <div id="controls">
+    <button id="phaseButton">Next</button>
+  </div>
 
 </div>
+
+<div>TURN: <span id="turn"></span></div>
+<div>PHASE: <span id="phase"></span></div>
+
+<div id="attackMenu" class="context-menu"></div>
 
 <div id="overlay"
 onclick="this.style.display='none'"
@@ -180,8 +200,6 @@ z-index:999;
   </div>
 
 </div>
-
-
 
 <script type="module" src="main.js"></script>
 </body>

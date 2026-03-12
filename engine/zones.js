@@ -60,6 +60,18 @@ export function moveCard(player, cardId, fromZone, toZone, slot = null){
 
   }
 
+  /* カード状態更新 */
+
+  const card = gameState.cards[cardId];
+  card.zone = toZone;
+  card.controller = player;
+  card.slot = slot;
+
+  /* デバッグ用 */
+  console.log(
+   `MOVE P${player} ${cardId}: ${fromZone} -> ${toZone}`
+  );
+
   return true;
 
 }

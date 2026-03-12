@@ -7,6 +7,9 @@ export const gameState = {
   // 選択中カードを追加
   selectedCard: null,
 
+  attackCandidate: null,
+  attackMenuCard: null,
+
   cards: {},
 
   players: [

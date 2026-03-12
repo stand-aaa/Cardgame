@@ -1,6 +1,6 @@
 import { gameState } from "../engine/gameState.js";
 import { cardDB } from "../data/cards.js";
-import { dispatch, getEnergy, canPlay } from "../engine/engine.js";
+import { dispatch, getEnergy, canPlay, getNextPhase, canAttack } from "../engine/engine.js";
 
 /* カード描画 */
 function createCardView(cardId){
@@ -10,6 +10,10 @@ function createCardView(cardId){
 
   const div = document.createElement("div");
   div.className = "card";
+
+  if(card.rested){
+    div.classList.add("card-rested");
+  }
 
   div.innerHTML =
     "<b>" + def.name + "</b><br>" +
@@ -38,7 +42,9 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
     const cardId = slots[i];
 
     if(cardId !== null){
-      div.appendChild(createCardView(cardId));
+      const cardView = createCardView(cardId);
+      cardView.id = "card-" + cardId;
+      div.appendChild(cardView);
     }
 
     if(clickable && gameState.selectedCard !== null){
@@ -47,8 +53,25 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
       }
     }
 
+    if(gameState.phase === "attack" && cardId !== null){
+      const card = gameState.cards[cardId];
+      if(!card.rested && card.controller === gameState.currentPlayer){
+        div.classList.add("slot-playable");
+      }
+    }
+
     if(clickable){
       div.onclick = ()=>{
+        if(playType === "attack"){
+          if(cardId === null) return;
+          const card = gameState.cards[cardId];
+          if(card.rested) return;
+          if(card.controller !== gameState.currentPlayer) return;
+          gameState.attackCandidate = cardId;
+          gameState.attackMenuCard = cardId;
+          render();
+          return;
+        }
 
         if(gameState.selectedCard === null) return;
 
@@ -213,8 +236,58 @@ function updateSelected(){
 
 }
 
+function renderAttackMenu(){
+  const menu = document.getElementById("attackMenu");
+  if(gameState.attackMenuCard === null){
+    menu.style.display = "none";
+    return;
+  }
+  const cardEl = document.getElementById("card-" + gameState.attackMenuCard);
+
+  if(!cardEl){
+    menu.style.display = "none";
+    return;
+  }
+
+  const rect = cardEl.getBoundingClientRect();
+  menu.innerHTML = "";
+  const attackBtn = document.createElement("button");
+  attackBtn.innerText = "Attack";
+
+  attackBtn.onclick = ()=>{
+    dispatch({
+      type:"attack",
+      card:gameState.attackCandidate
+    });
+    gameState.attackCandidate = null;
+    gameState.attackMenuCard = null;
+    render();
+  };
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.innerText = "Cancel";
+
+  cancelBtn.onclick = ()=>{
+    gameState.attackCandidate = null;
+    gameState.attackMenuCard = null;
+    render();
+  };
+  menu.appendChild(attackBtn);
+  menu.appendChild(cancelBtn);
+
+  /* カード横に表示 */
+  menu.style.position = "fixed";
+  menu.style.left = rect.right + 8 + "px";
+  menu.style.top = rect.top + "px";
+
+  menu.style.display = "block";
+}
+
 /* メイン描画 */
 export function render(){
+
+  document.getElementById("phase").innerText = gameState.phase;
+  document.getElementById("turn").innerText = gameState.turn;
 
   const player = gameState.players[gameState.currentPlayer];
   const opponent = gameState.players[1 - gameState.currentPlayer];
@@ -222,7 +295,11 @@ export function render(){
   document.getElementById("ap").innerText = player.actionPoints;
   document.getElementById("energyTotal").innerText = getEnergy(player);
 
-  renderSlots("front", player.frontLine, true, "play_front");
+  if(gameState.phase === "attack"){
+    renderSlots("front", player.frontLine, true, "attack");
+  }else{
+    renderSlots("front", player.frontLine, true, "play_front");
+  }
   renderSlots("energy", player.energyLine, true, "play_energy");
 
   renderSlots("opponent-front", opponent.frontLine);
@@ -240,5 +317,21 @@ export function render(){
   renderZone("opponent-remove","Removed",opponent.remove);
 
   updateSelected();
+
+  renderAttackMenu();
+
+  const next = getNextPhase();
+
+  const btn = document.getElementById("phaseButton");
+
+  if(next === "turn"){
+    btn.innerText = "End Turn ▶";
+  }else{
+    btn.innerText = next.toUpperCase() + " Phase ▶";
+  }
+
+  btn.onclick = ()=>{
+    dispatch({type:"next_phase"});
+  };
 
 }
