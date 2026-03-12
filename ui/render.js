@@ -37,62 +37,89 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
   for(let i=0;i<slots.length;i++){
 
     const div = document.createElement("div");
-    div.className="slot";
+    div.className = "slot";
 
     const cardId = slots[i];
 
+    /* カード表示 */
     if(cardId !== null){
       const cardView = createCardView(cardId);
       cardView.id = "card-" + cardId;
       div.appendChild(cardView);
     }
 
+    /* 手札プレイ可能 */
     if(clickable && gameState.selectedCard !== null){
       if(cardId === null && canPlay(player, gameState.selectedCard)){
         div.classList.add("slot-playable");
       }
     }
 
-    if(gameState.phase === "attack" && cardId !== null){
-      const card = gameState.cards[cardId];
-      if(!card.rested && card.controller === gameState.currentPlayer){
-        div.classList.add("slot-playable");
-      }
+    /* 攻撃可能表示（フロントラインのみ） */
+    if(
+      gameState.phase === "attack" &&
+      cardId !== null &&
+      canAttack(cardId)
+    ){
+      div.classList.add("slot-attackable");
     }
 
+    /* ブロック可能表示 */
+    if(
+      gameState.battle.attacker !== null &&
+      cardId !== null &&
+      canBlock(cardId)
+    ){
+      div.classList.add("slot-blockable");
+    }
+
+    /* クリック処理 */
     if(clickable){
-      div.onclick = ()=>{
-        if(playType === "attack"){
-          if(cardId === null) return;
-          const card = gameState.cards[cardId];
-          if(card.rested) return;
-          if(card.controller !== gameState.currentPlayer) return;
-          gameState.attackCandidate = cardId;
-          gameState.attackMenuCard = cardId;
-          render();
-          return;
-        }
 
-        if(gameState.selectedCard === null) return;
-
+    div.onclick = ()=>{
+      /* ---------- ブロック ---------- */
+      if(gameState.battle.attacker !== null){
+        if(!canBlock(cardId)) return;
         const success = dispatch({
-          type: playType,
-          card: gameState.selectedCard,
-          slot: i
+          type:"block",
+          card:cardId
+        });
+        if(success){
+          dispatch({type:"resolve_battle"});
+        }
+        render();
+        return;
+      }
+
+      /* ---------- 攻撃 ---------- */
+      if(gameState.phase === "attack"){
+        if(!canAttack(cardId)) return;
+
+        dispatch({
+          type:"attack",
+          card:cardId
         });
 
-        if(success){
-          gameState.selectedCard = null;
-        }
-
         render();
-      };
+        return;
+      }
+
+      /* ---------- 通常プレイ ---------- */
+      if(gameState.selectedCard === null) return;
+      const success = dispatch({
+        type: playType,
+        card: gameState.selectedCard,
+        slot: i
+      });
+      if(success){
+        gameState.selectedCard = null;
+      }
+      render();
+    };
     }
 
     container.appendChild(div);
-
   }
-
 }
 
 /* ゾーン表示 */
@@ -180,16 +207,11 @@ function renderHand(player){
       dispcard.classList.add("card-selected");
     }
 
-    if(player.actionPoints < def.apCost){
+    if(!canPlay(player, cardId)){
       dispcard.classList.add("card-disabled");
     }
 
     dispcard.onclick = ()=>{
-
-      if(player.actionPoints < def.apCost){
-        alert("APが足りません");
-        return;
-      }
 
       if(gameState.selectedCard === cardId){
         gameState.selectedCard=null;

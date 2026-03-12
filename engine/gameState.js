@@ -10,6 +10,11 @@ export const gameState = {
   attackCandidate: null,
   attackMenuCard: null,
 
+  battle:{
+    attacker:null,
+    blocker:null
+  },
+
   cards: {},
 
   players: [

@@ -14,6 +14,13 @@ export const cardDB = {
     energyCost:1,
     energy:2,
     power:3000
+  },
+  3:{
+    name:"King",
+    apCost:2,
+    energyCost:5,
+    energy:1,
+    power:4000,
+    enterActive: true
   }
-
 };

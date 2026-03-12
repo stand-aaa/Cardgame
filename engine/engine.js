@@ -17,7 +17,15 @@ export function dispatch(action){
 
   switch(action.type){
     case "attack":
-      result = attack(action.card);
+      result = declareAttack(action.card);
+      break;
+
+    case "block":
+      result = declareBlock(action.card);
+      break;
+
+    case "resolve_battle":
+      result = resolveBattle();
       break;
 
     case "play_front":
@@ -137,55 +145,67 @@ export function canPlay(player, cardId){
 }
 
 /* 攻撃可能判定 */
-export function canAttack(player, cardId){
+export function canAttack(cardId){
+  if(cardId === null) return false;
   if(gameState.phase !== "attack") return false;
   const card = gameState.cards[cardId];
-  if(card.rested) return false;
+  if(!card) return false;
+  const player = gameState.players[gameState.currentPlayer];
   if(card.controller !== gameState.currentPlayer) return false;
+  if(card.rested) return false;
+  if(!player.frontLine.includes(cardId)) return false;
   return true;
 }
 
+/* フロントラインにカードをプレイ */
 function playFront(cardId,slot){
-
-  const p = gameState.players[gameState.currentPlayer];
+  const playerIndex = gameState.currentPlayer;
+  const p = gameState.players[playerIndex];
 
   if(!canPlay(p,cardId)) return false;
-
-  if(p.frontLine[slot]!==null) return false;
+  if(p.frontLine[slot] !== null) return false;
 
   const card = gameState.cards[cardId];
   const def = cardDB[card.cardId];
 
-  const index = p.hand.indexOf(cardId);
+  /* hand → frontLine */
+  moveCard(playerIndex, cardId, "hand", "frontLine", slot);
 
-  p.hand.splice(index,1);
+  /* 基本はレストで登場 */
+  card.rested = true;
 
-  p.frontLine[slot]=cardId;
+  /* 効果でアクティブ登場 */
+  if(def.enterActive){
+    card.rested = false;
+  }
 
   p.actionPoints -= def.apCost;
 
   return true;
 }
 
-function playEnergy(cardId,slot){
 
-  const p = gameState.players[gameState.currentPlayer];
+/* エナジーラインにカードをプレイ */
+function playEnergy(cardId,slot){
+  const playerIndex = gameState.currentPlayer;
+  const p = gameState.players[playerIndex];
 
   if(!canPlay(p,cardId)) return false;
-
-  if(p.energyLine[slot]!==null) return false;
+  if(p.energyLine[slot] !== null) return false;
 
   const card = gameState.cards[cardId];
   const def = cardDB[card.cardId];
 
-  const index = p.hand.indexOf(cardId);
+  /* hand → energyLine */
+  moveCard(playerIndex, cardId, "hand", "energyLine", slot);
 
-  p.hand.splice(index,1);
+  /* 基本レスト */
+  card.rested = true;
 
-  p.energyLine[slot]=cardId;
-
+  if(def.enterActive){
+    card.rested = false;
+  }
   p.actionPoints -= def.apCost;
-
   return true;
 }
 
@@ -285,28 +305,84 @@ function unrestAll(player){
   }
 }
 
-function attack(cardId){
-
-  if(gameState.phase !== "attack") return false;
+function declareAttack(cardId){
 
   const playerIndex = gameState.currentPlayer;
-  const opponentIndex = 1 - playerIndex;
-
   const player = gameState.players[playerIndex];
-  const opponent = gameState.players[opponentIndex];
+
+  if(!canAttack(cardId)) return false;
+
+  gameState.battle.attacker = cardId;
+  gameState.battle.blocker = null;
 
   const card = gameState.cards[cardId];
-
-  // レストしていたら攻撃不可
-  if(card.rested) return false;
 
   // 攻撃 → レスト
   card.rested = true;
 
-  // ライフチェック
-  if(opponent.life.length > 0){
-    const lifeCard = opponent.life[opponent.life.length - 1];
-    moveCard(opponentIndex, lifeCard, "life", "trash");
-  }
   return true;
+}
+
+export function canBlock(cardId){
+
+  const opponentIndex = 1 - gameState.currentPlayer;
+  const opponent = gameState.players[opponentIndex];
+
+  if(gameState.battle.attacker === null) return false;
+
+  const card = gameState.cards[cardId];
+
+  if(!card) return false;
+  if(card.controller !== opponentIndex) return false;
+  if(card.rested) return false;
+
+  if(!opponent.frontLine.includes(cardId)) return false;
+
+  return true;
+
+}
+
+function declareBlock(cardId){
+  const opponentIndex = 1 - gameState.currentPlayer;
+  if(!canBlock(cardId)) return false;
+  gameState.battle.blocker = cardId;
+  return true;
+}
+
+function resolveBattle(){
+
+  const attackerId = gameState.battle.attacker;
+  const blockerId = gameState.battle.blocker;
+  const attacker = gameState.cards[attackerId];
+  const opponentIndex = 1 - gameState.currentPlayer;
+  const opponent = gameState.players[opponentIndex];
+
+  if(blockerId === null){
+    // ブロックなし → ライフダメージ
+    if(opponent.life.length > 0){
+      const lifeCard = opponent.life[opponent.life.length - 1];
+      moveCard(opponentIndex, lifeCard, "life", "trash");
+    }
+
+  }else{
+    const blocker = gameState.cards[blockerId];
+    const attackerDef = cardDB[attacker.cardId];
+    const blockerDef = cardDB[blocker.cardId];
+    const atk = attackerDef.power;
+    const def = blockerDef.power;
+    if(atk >= def){
+      // 防御側KO
+      moveCard(opponentIndex, blockerId, "frontLine", "trash");
+    }else{
+      // 攻撃 < 防御 → 両方レスト
+      blocker.rested = true;
+    }
+  }
+
+  // 戦闘終了
+  gameState.battle.attacker = null;
+  gameState.battle.blocker = null;
+
+  return true;
+
 }

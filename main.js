@@ -6,19 +6,14 @@ import { dispatch, startTurn } from "./engine/engine.js";
 
 /* デッキ作成 */
 function setupDeck(player){
-
   const p = gameState.players[player];
-
-  for(let i=0;i<10;i++){
-
-    const cardId = Math.random() < 0.5 ? 1 : 2;
-
-    const instanceId = createCard(cardId, player);
-
+  const cardIds = Object.keys(cardDB);
+  for(let i = 0; i < 10; i++){
+    const randomCardId =
+      cardIds[Math.floor(Math.random() * cardIds.length)];
+    const instanceId = createCard(randomCardId, player);
     p.deck.push(instanceId);
-
   }
-
 }
 
 /* ドロー */
