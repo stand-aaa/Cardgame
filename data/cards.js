@@ -5,7 +5,8 @@ export const cardDB = {
     apCost:1,
     energyCost:0,
     energy:1,
-    power:1000
+    power:1000,
+    step: true
   },
 
   2:{

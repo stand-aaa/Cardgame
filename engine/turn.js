@@ -3,6 +3,7 @@ import { render } from "../ui/render.js";
 import { calculateAP, unrestAll } from "./stateHelpers.js";
 import { processPhase } from "./phases.js";
 import { draw } from "../main.js"
+import { resetMoveFlags } from "./move.js";
 
 /* ターン終了時の処理 */
 export function endTurn(){
@@ -45,6 +46,9 @@ export function startTurn(){
   } else {
     console.log(`Player ${playerIndex} skips draw on first turn (先行1ターン目)`);
   }
+
+  /* 移動制限の解除 */
+  resetMoveFlags(p);
 
   gameState.phase = "start";
 

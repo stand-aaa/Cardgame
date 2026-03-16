@@ -4,6 +4,7 @@ import { declareAttack, declareBlock, resolveBattle, takeDamage } from "./battle
 import { playFront, playEnergy } from "./play.js";
 import { nextPhase } from "./phases.js";
 import { endTurn } from "./turn.js";
+import { moveToFront, moveToEnergy } from "./move.js";
 
 /* フェイズの宣言 */
 export const PHASES = [
@@ -18,8 +19,17 @@ export const PHASES = [
 export function dispatch(action){
 
   let result = false;
+  console.log(`action : ${action.type}`);
+  
 
   switch(action.type){
+    case "move_front":
+      result = moveToFront(action.card, action.slot);
+      break;
+
+    case "move_energy":
+      result = moveToEnergy(action.card, action.slot);
+      break;
 
     case "attack":
       result = declareAttack(action.card);

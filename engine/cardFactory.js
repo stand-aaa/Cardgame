@@ -16,6 +16,8 @@ export function createCard(cardId, owner){
     slot: null,
     state: "active",
     rested:false,
+    /* ターン中の移動制限 */
+    movedThisTurn: false,
 
     skipUnrest:0
   };

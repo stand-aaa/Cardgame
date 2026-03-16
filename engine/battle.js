@@ -53,7 +53,7 @@ export function canBlock(cardId){
   const opponentIndex = 1 - gameState.currentPlayer;
   const opponent = gameState.players[opponentIndex];
   if(gameState.battle.attacker === null) return false;
-
+  console.log(`canblock : ${cardId}`);
   const card = gameState.cards[cardId];
   if(!card) return false;
 

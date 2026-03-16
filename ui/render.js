@@ -58,6 +58,75 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
       }
     }
 
+    /* 移動可能(エナジー -> フロント) */
+    if(
+      gameState.phase === "move" &&
+      gameState.selectedCard === null &&
+      cardId !== null &&
+      player.energyLine.includes(cardId)
+    ){
+      div.classList.add("slot-step");
+    }
+    /* ---------- 移動可能表示 ---------- */
+    if(
+      gameState.phase === "move" &&
+      gameState.selectedCard !== null &&
+      containerId === "front" &&
+      cardId === null
+    ){
+
+      const player = gameState.players[gameState.currentPlayer];
+      const card = gameState.cards[gameState.selectedCard];
+      if(!card) return;
+
+      if(!card.movedThisTurn){
+
+        if(player.energyLine.includes(gameState.selectedCard)){
+          div.classList.add("slot-movable");
+        }
+
+      }
+    }
+
+    /* 移動可能(フロント -> エナジー) */
+    if(
+      gameState.phase === "move" &&
+      gameState.selectedCard === null &&
+      containerId === "front" &&
+      cardId !== null
+    ){
+      const card = gameState.cards[cardId];
+      const def = cardDB[card.cardId];
+
+      if(def.step){
+        div.classList.add("slot-step");
+      }
+    }
+    /* ---------- 移動可能表示 ---------- */
+    if(
+      gameState.phase === "move" &&
+      gameState.selectedCard !== null &&
+      containerId === "energy" &&
+      cardId === null
+    ){
+
+      const player = gameState.players[gameState.currentPlayer];
+      const card = gameState.cards[gameState.selectedCard];
+      if(!card) return;
+
+      if(!card.movedThisTurn){
+
+        if(player.frontLine.includes(gameState.selectedCard)){
+
+          const def = cardDB[card.cardId];
+
+          if(def.step){
+            div.classList.add("slot-movable");
+          }
+        }
+      }
+    }
+
     /* 攻撃可能表示（フロントラインのみ） */
     if(
       gameState.phase === "attack" &&
@@ -80,10 +149,71 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
     /* クリック処理 */
     if(clickable){
       div.onclick = ()=>{
+
+      /* ---------- 移動 ---------- */
+      if(gameState.phase === "move"){
+        /* energy → front */
+        if(containerId === "energy" && cardId !== null){
+          const card = gameState.cards[cardId];
+          if(card.movedThisTurn) return;
+          gameState.selectedCard = cardId;
+          render();
+          return;
+        }
+        /* front → energy（step） */
+        if(containerId === "front" && cardId !== null){
+
+          const card = gameState.cards[cardId];
+          const def = cardDB[card.cardId];
+
+          if(def.step){
+            const card = gameState.cards[cardId];
+            if(card.movedThisTurn) return;
+            gameState.selectedCard = cardId;
+            render();
+            return;
+          }
+        }
+        /* 移動先 front */
+        if(
+          containerId === "front" &&
+          gameState.selectedCard !== null &&
+          player.energyLine.includes(gameState.selectedCard)
+        ){
+          dispatch({
+            type:"move_front",
+            card:gameState.selectedCard,
+            slot:i
+          });
+          gameState.selectedCard = null;
+
+          render();
+          return;
+        }
+
+        /* 移動先 energy */
+        if(
+          containerId === "energy" &&
+          gameState.selectedCard !== null &&
+          player.frontLine.includes(gameState.selectedCard)
+        ){
+          dispatch({
+            type:"move_energy",
+            card:gameState.selectedCard,
+            slot:i
+          });
+          gameState.selectedCard = null;
+
+          render();
+          return;
+        }
+      }
+
         const battle = gameState.battle;
         /* ---------- ブロック ---------- */
         if(battle.attacker !== null){
           if(!canBlock(cardId)) return;
+
           const success = dispatch({
             type:"block",
             card:cardId
