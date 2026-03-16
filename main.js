@@ -2,7 +2,8 @@ import { gameState } from "./engine/gameState.js";
 import { createCard } from "./engine/cardFactory.js";
 import { render } from "./ui/render.js";
 import { cardDB } from "../data/cards.js";
-import { dispatch, startTurn } from "./engine/engine.js";
+import { dispatch } from "./engine/engine.js";
+import { startTurn } from "./engine/turn.js";
 
 /* デッキ作成 */
 function setupDeck(player){
@@ -17,7 +18,7 @@ function setupDeck(player){
 }
 
 /* ドロー */
-function draw(player){
+export function draw(player){
 
   const p = gameState.players[player];
 

@@ -1,6 +1,9 @@
 import { gameState } from "../engine/gameState.js";
 import { cardDB } from "../data/cards.js";
-import { dispatch, getEnergy, canPlay, getNextPhase, canAttack } from "../engine/engine.js";
+import { dispatch } from "../engine/engine.js";
+import { getEnergy, canPlay } from "../engine/stateHelpers.js";
+import { getNextPhase } from "../engine/phases.js";
+import { canAttack, canBlock } from "../engine/battle.js";
 
 /* カード描画 */
 function createCardView(cardId){
@@ -68,56 +71,50 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
     if(
       gameState.battle.attacker !== null &&
       cardId !== null &&
-      canBlock(cardId)
+      canBlock(cardId) &&
+      containerId === "opponent-front"
     ){
       div.classList.add("slot-blockable");
     }
 
     /* クリック処理 */
     if(clickable){
+      div.onclick = ()=>{
+        const battle = gameState.battle;
+        /* ---------- ブロック ---------- */
+        if(battle.attacker !== null){
+          if(!canBlock(cardId)) return;
+          const success = dispatch({
+            type:"block",
+            card:cardId
+          });
+          if(success){
+            dispatch({type:"resolve_battle"});
+          }
+          return;
+        }
 
-    div.onclick = ()=>{
-      /* ---------- ブロック ---------- */
-      if(gameState.battle.attacker !== null){
-        if(!canBlock(cardId)) return;
+        /* ---------- 攻撃 ---------- */
+        if(gameState.phase === "attack"){
+          if(!canAttack(cardId)) return;
+          gameState.attackMenuCard = cardId;
+          renderAttackMenu();
+          return;
+        }
+
+        /* ---------- 通常プレイ ---------- */
+        if(gameState.selectedCard === null) return;
         const success = dispatch({
-          type:"block",
-          card:cardId
+          type: playType,
+          card: gameState.selectedCard,
+          slot: i
         });
         if(success){
-          dispatch({type:"resolve_battle"});
+          gameState.selectedCard = null;
         }
         render();
-        return;
-      }
-
-      /* ---------- 攻撃 ---------- */
-      if(gameState.phase === "attack"){
-        if(!canAttack(cardId)) return;
-
-        dispatch({
-          type:"attack",
-          card:cardId
-        });
-
-        render();
-        return;
-      }
-
-      /* ---------- 通常プレイ ---------- */
-      if(gameState.selectedCard === null) return;
-      const success = dispatch({
-        type: playType,
-        card: gameState.selectedCard,
-        slot: i
-      });
-      if(success){
-        gameState.selectedCard = null;
-      }
-      render();
-    };
+      };
     }
-
     container.appendChild(div);
   }
 }
@@ -259,50 +256,49 @@ function updateSelected(){
 }
 
 function renderAttackMenu(){
-  const menu = document.getElementById("attackMenu");
-  if(gameState.attackMenuCard === null){
-    menu.style.display = "none";
-    return;
-  }
-  const cardEl = document.getElementById("card-" + gameState.attackMenuCard);
+  /* 既存メニュー削除 */
+  document.querySelectorAll(".attack-menu").forEach(e=>e.remove());
 
-  if(!cardEl){
-    menu.style.display = "none";
-    return;
-  }
+  const cardId = gameState.attackMenuCard;
+  if(cardId === null) return;
+  const cardEl = document.getElementById("card-" + cardId);
+  if(!cardEl) return;
+  const menu = document.createElement("div");
+  menu.className = "attack-menu";
 
-  const rect = cardEl.getBoundingClientRect();
-  menu.innerHTML = "";
+  menu.onclick = (e)=>{
+    e.stopPropagation();
+  };
+
+  /* 攻撃 */
   const attackBtn = document.createElement("button");
-  attackBtn.innerText = "Attack";
+  attackBtn.textContent = "攻撃";
 
-  attackBtn.onclick = ()=>{
+  attackBtn.onclick = (e)=>{
+    e.stopPropagation();
     dispatch({
       type:"attack",
-      card:gameState.attackCandidate
+      card:cardId
     });
-    gameState.attackCandidate = null;
+
     gameState.attackMenuCard = null;
     render();
   };
 
+  /* キャンセル */
   const cancelBtn = document.createElement("button");
-  cancelBtn.innerText = "Cancel";
+  cancelBtn.textContent = "キャンセル";
 
-  cancelBtn.onclick = ()=>{
-    gameState.attackCandidate = null;
+  cancelBtn.onclick = (e)=>{
+    e.stopPropagation();
     gameState.attackMenuCard = null;
     render();
   };
+
   menu.appendChild(attackBtn);
   menu.appendChild(cancelBtn);
 
-  /* カード横に表示 */
-  menu.style.position = "fixed";
-  menu.style.left = rect.right + 8 + "px";
-  menu.style.top = rect.top + "px";
-
-  menu.style.display = "block";
+  cardEl.appendChild(menu);
 }
 
 /* メイン描画 */
@@ -317,24 +313,33 @@ export function render(){
   document.getElementById("ap").innerText = player.actionPoints;
   document.getElementById("energyTotal").innerText = getEnergy(player);
 
+  const DEBUG_ALLOW_CLICK_OPPONENT = true; // デバッグ用フラグ
+
+  // 自分の frontLine
   if(gameState.phase === "attack"){
     renderSlots("front", player.frontLine, true, "attack");
+    // デバッグ用: 攻撃側でも相手の frontLine をクリック可能にする
+    renderSlots("opponent-front", opponent.frontLine, DEBUG_ALLOW_CLICK_OPPONENT);
   }else{
     renderSlots("front", player.frontLine, true, "play_front");
+    // 通常フェーズはクリック不可
+    renderSlots("opponent-front", opponent.frontLine, false);
   }
-  renderSlots("energy", player.energyLine, true, "play_energy");
 
-  renderSlots("opponent-front", opponent.frontLine);
+  // エナジーライン
+  renderSlots("energy", player.energyLine, true, "play_energy");
   renderSlots("opponent-energy", opponent.energyLine);
 
+  // 手札
   renderHand(player);
 
+  // ライフ
   renderLife(player, "life");
   renderLife(opponent, "opponent-life");
 
+  // トラッシュ / リムーブ
   renderZone("player-trash","Trash",player.trash);
   renderZone("player-remove","Removed",player.remove);
-
   renderZone("opponent-trash","Trash",opponent.trash);
   renderZone("opponent-remove","Removed",opponent.remove);
 
@@ -343,17 +348,21 @@ export function render(){
   renderAttackMenu();
 
   const next = getNextPhase();
-
   const btn = document.getElementById("phaseButton");
+  btn.innerText = next === "turn" ? "End Turn ▶" : next.toUpperCase() + " Phase ▶";
+  btn.onclick = ()=> dispatch({type:"next_phase"});
 
-  if(next === "turn"){
-    btn.innerText = "End Turn ▶";
+  /* ライフで受けるボタンを表示 */
+  const takeBtn = document.getElementById("takeDamageBtn");
+
+  if(gameState.phase === "attack" && gameState.battle.attacker !== null){
+    takeBtn.style.display = "inline-block";
+
+    takeBtn.onclick = ()=>{
+      const opponentIndex = 1 - gameState.currentPlayer;
+      dispatch({ type: "take_damage", player: opponentIndex });
+    };
   }else{
-    btn.innerText = next.toUpperCase() + " Phase ▶";
+    takeBtn.style.display = "none";
   }
-
-  btn.onclick = ()=>{
-    dispatch({type:"next_phase"});
-  };
-
 }
