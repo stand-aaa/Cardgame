@@ -56,13 +56,13 @@ export function canBlock(cardId){
   console.log(`canblock : ${cardId}`);
   const card = gameState.cards[cardId];
   if(!card) return false;
+  if(card.rested) return false;
 
   // デバッグ用: 攻撃側でもクリック可能
   const DEBUG_ALLOW_ATTACKER_BLOCK = true;
 
   if(!DEBUG_ALLOW_ATTACKER_BLOCK){
     if(card.controller !== opponentIndex) return false;
-    if(card.rested) return false;
     if(!opponent.frontLine.includes(cardId)) return false;
   }
 

@@ -69,3 +69,33 @@ export function resetMoveFlags(player){
     }
   }
 }
+
+/* 移動可能判定 */
+export function canMove(cardId, toZone){
+
+  if(gameState.phase !== "move") return false;
+
+  const playerIndex = gameState.currentPlayer;
+  const player = gameState.players[playerIndex];
+
+  const card = gameState.cards[cardId];
+  if(!card) return false;
+
+  // ターン中に移動済み
+  if(card.movedThisTurn) return false;
+
+  /* energy → front */
+  if(toZone === "front"){
+    return player.energyLine.includes(cardId);
+  }
+
+  /* front → energy（step） */
+  if(toZone === "energy"){
+    if(!player.frontLine.includes(cardId)) return false;
+
+    const def = cardDB[card.cardId];
+    return def.step === true;
+  }
+
+  return false;
+}

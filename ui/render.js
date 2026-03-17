@@ -4,6 +4,7 @@ import { dispatch } from "../engine/engine.js";
 import { getEnergy, canPlay } from "../engine/stateHelpers.js";
 import { getNextPhase } from "../engine/phases.js";
 import { canAttack, canBlock } from "../engine/battle.js";
+import { canMove } from "../engine/move.js";
 
 /* カード描画 */
 function createCardView(cardId){
@@ -51,6 +52,11 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
       div.appendChild(cardView);
     }
 
+    /* 選択中カード */
+    if(cardId !== null && cardId === gameState.selectedCard){
+      div.classList.add("card-selected");
+    }
+    
     /* 手札プレイ可能 */
     if(clickable && gameState.selectedCard !== null){
       if(cardId === null && canPlay(player, gameState.selectedCard)){
@@ -58,71 +64,34 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
       }
     }
 
-    /* 移動可能(エナジー -> フロント) */
+    /* 移動可能カード表示 */
     if(
       gameState.phase === "move" &&
       gameState.selectedCard === null &&
-      cardId !== null &&
-      player.energyLine.includes(cardId)
-    ){
-      div.classList.add("slot-step");
-    }
-    /* ---------- 移動可能表示 ---------- */
-    if(
-      gameState.phase === "move" &&
-      gameState.selectedCard !== null &&
-      containerId === "front" &&
-      cardId === null
-    ){
-
-      const player = gameState.players[gameState.currentPlayer];
-      const card = gameState.cards[gameState.selectedCard];
-      if(!card) return;
-
-      if(!card.movedThisTurn){
-
-        if(player.energyLine.includes(gameState.selectedCard)){
-          div.classList.add("slot-movable");
-        }
-
-      }
-    }
-
-    /* 移動可能(フロント -> エナジー) */
-    if(
-      gameState.phase === "move" &&
-      gameState.selectedCard === null &&
-      containerId === "front" &&
       cardId !== null
     ){
-      const card = gameState.cards[cardId];
-      const def = cardDB[card.cardId];
-
-      if(def.step){
+      if(
+        canMove(cardId, "front") ||
+        canMove(cardId, "energy")
+      ){
         div.classList.add("slot-step");
       }
     }
-    /* ---------- 移動可能表示 ---------- */
+    /* 移動先表示 */
     if(
       gameState.phase === "move" &&
       gameState.selectedCard !== null &&
-      containerId === "energy" &&
       cardId === null
     ){
+      if(containerId === "front"){
+        if(canMove(gameState.selectedCard, "front")){
+          div.classList.add("slot-movable");
+        }
+      }
 
-      const player = gameState.players[gameState.currentPlayer];
-      const card = gameState.cards[gameState.selectedCard];
-      if(!card) return;
-
-      if(!card.movedThisTurn){
-
-        if(player.frontLine.includes(gameState.selectedCard)){
-
-          const def = cardDB[card.cardId];
-
-          if(def.step){
-            div.classList.add("slot-movable");
-          }
+      if(containerId === "energy"){
+        if(canMove(gameState.selectedCard, "energy")){
+          div.classList.add("slot-movable");
         }
       }
     }
@@ -150,64 +119,58 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
     if(clickable){
       div.onclick = ()=>{
 
-      /* ---------- 移動 ---------- */
-      if(gameState.phase === "move"){
-        /* energy → front */
-        if(containerId === "energy" && cardId !== null){
-          const card = gameState.cards[cardId];
-          if(card.movedThisTurn) return;
-          gameState.selectedCard = cardId;
-          render();
-          return;
-        }
-        /* front → energy（step） */
-        if(containerId === "front" && cardId !== null){
+        /* ---------- 移動 ---------- */
+        if(gameState.phase === "move"){
 
-          const card = gameState.cards[cardId];
-          const def = cardDB[card.cardId];
+          /* カード選択 */
+          if(cardId !== null){
 
-          if(def.step){
-            const card = gameState.cards[cardId];
-            if(card.movedThisTurn) return;
-            gameState.selectedCard = cardId;
+            // 移動可能なカードのみ対象
+            if(
+              canMove(cardId, "front") ||
+              canMove(cardId, "energy")
+            ){
+
+              // 同じカードをもう一度クリック → キャンセル
+              if(gameState.selectedCard === cardId){
+                gameState.selectedCard = null;
+              }else{
+                // 別のカード → 選択
+                gameState.selectedCard = cardId;
+              }
+
+              render();
+            }
+
+            return;
+          }
+
+          /* 移動実行 */
+          if(cardId === null && gameState.selectedCard !== null){
+
+            const selected = gameState.selectedCard;
+
+            if(containerId === "front" && canMove(selected, "front")){
+              dispatch({
+                type:"move_front",
+                card:selected,
+                slot:i
+              });
+            }
+
+            if(containerId === "energy" && canMove(selected, "energy")){
+              dispatch({
+                type:"move_energy",
+                card:selected,
+                slot:i
+              });
+            }
+
+            gameState.selectedCard = null;
             render();
             return;
           }
         }
-        /* 移動先 front */
-        if(
-          containerId === "front" &&
-          gameState.selectedCard !== null &&
-          player.energyLine.includes(gameState.selectedCard)
-        ){
-          dispatch({
-            type:"move_front",
-            card:gameState.selectedCard,
-            slot:i
-          });
-          gameState.selectedCard = null;
-
-          render();
-          return;
-        }
-
-        /* 移動先 energy */
-        if(
-          containerId === "energy" &&
-          gameState.selectedCard !== null &&
-          player.frontLine.includes(gameState.selectedCard)
-        ){
-          dispatch({
-            type:"move_energy",
-            card:gameState.selectedCard,
-            slot:i
-          });
-          gameState.selectedCard = null;
-
-          render();
-          return;
-        }
-      }
 
         const battle = gameState.battle;
         /* ---------- ブロック ---------- */

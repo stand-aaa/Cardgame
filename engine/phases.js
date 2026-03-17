@@ -13,7 +13,7 @@ export function nextPhase(){
   if(index < PHASES.length - 1){
 
     gameState.phase = PHASES[index + 1];
-
+    resetPhaseState();
     processPhase();
 
   }else{
@@ -70,6 +70,17 @@ function processEndPhase(playerIndex, player){
   // ・状態リセット
   // などを書く
 
+}
+
+/* フェイズ移行のリセット処理 */
+function resetPhaseState(){
+  //選択カードの初期化
+  gameState.selectedCard = null;
+  gameState.attackMenuCard = null;
+  gameState.battle = {
+    attacker: null,
+    blocker: null
+  };
 }
 
 /* 次のフェイズに移行 */
