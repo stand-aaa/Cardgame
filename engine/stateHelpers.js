@@ -1,5 +1,6 @@
 import { gameState } from "./gameState.js";
 import { cardDB } from "../data/cards.js";
+import { draw } from "../main.js"
 
 /* 最大APの処理 */
 export function calculateAP(player){
@@ -108,4 +109,28 @@ export function unrestAll(player){
 
     }
   }
+}
+
+/* EXドロー処理 */
+export function exDraw(){
+
+  const player = gameState.players[gameState.currentPlayer];
+
+  // 条件チェック
+  if(gameState.phase !== "start") return false;
+  if(gameState.exDrawUsed) return false;
+  if(player.actionPoints < 1) return false;
+
+  // AP消費
+  player.actionPoints -= 1;
+
+  // ドロー
+  draw(gameState.currentPlayer, 1);
+
+  // 使用済みフラグ
+  gameState.exDrawUsed = true;
+
+  console.log("EXドロー実行");
+
+  return true;
 }

@@ -458,4 +458,32 @@ export function render(){
   }else{
     takeBtn.style.display = "none";
   }
+
+  /* EXドローボタン制御 */
+
+  // EXドローボタン削除
+  const oldBtn = document.getElementById("exDrawBtn");
+  if(oldBtn) oldBtn.remove();
+
+  // startフェイズであれば生成
+  if(gameState.phase === "start"){
+
+    const player = gameState.players[gameState.currentPlayer];
+    const takeBtn = document.getElementById("takeDamageBtn");
+
+    if(!gameState.exDrawUsed && player.actionPoints > 0){
+
+      const btn = document.createElement("button");
+      btn.id = "exDrawBtn";
+      btn.textContent = "EXドロー";
+      btn.style.marginLeft = "10px";
+
+      btn.onclick = () => {
+        dispatch({ type:"ex_draw" });
+        render();
+      };
+
+      takeBtn.insertAdjacentElement("afterend", btn);
+    }
+  }
 }

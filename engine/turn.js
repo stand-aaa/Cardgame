@@ -52,5 +52,8 @@ export function startTurn(){
 
   gameState.phase = "start";
 
+  /* EXドローの権利復活 */
+  gameState.exDrawUsed = false;
+
   processPhase();
 }

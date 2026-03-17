@@ -4,8 +4,8 @@ export const gameState = {
   phase: "main",
   currentPlayer: 0,
 
-  //ターン中の移動回数を1度に制限
-  moveUsed: false,
+  // EXドローの回数
+  exDrawUsed: false,
 
   // 選択中カードを追加
   selectedCard: null,

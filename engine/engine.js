@@ -5,6 +5,7 @@ import { playFront, playEnergy } from "./play.js";
 import { nextPhase } from "./phases.js";
 import { endTurn } from "./turn.js";
 import { moveToFront, moveToEnergy } from "./move.js";
+import { exDraw } from "./stateHelpers.js";
 
 /* フェイズの宣言 */
 export const PHASES = [
@@ -46,6 +47,10 @@ export function dispatch(action){
     case "take_damage":
       result = takeDamage();
       result = true;
+      break;
+
+    case "ex_draw":
+      result = exDraw();
       break;
 
     case "play_front":
