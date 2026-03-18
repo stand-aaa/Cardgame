@@ -77,6 +77,7 @@ function resetPhaseState(){
   //選択カードの初期化
   gameState.selectedCard = null;
   gameState.attackMenuCard = null;
+  gameState.effectMenuCard = null;
   gameState.battle = {
     attacker: null,
     blocker: null

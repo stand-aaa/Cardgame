@@ -10,6 +10,9 @@ export const gameState = {
   // 選択中カードを追加
   selectedCard: null,
 
+  // 起動効果メニュー用
+  effectMenuCard: null,
+
   attackCandidate: null,
   attackMenuCard: null,
 
@@ -19,6 +22,14 @@ export const gameState = {
   },
 
   cards: {},
+
+  effect: {
+    mode: null,        // "select_target" / "select_hand_discard"
+    source: null,
+    effectId: null,
+    step: 0,
+    data: {}
+  },
 
   players: [
     {

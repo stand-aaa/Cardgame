@@ -6,6 +6,7 @@ import { nextPhase } from "./phases.js";
 import { endTurn } from "./turn.js";
 import { moveToFront, moveToEnergy } from "./move.js";
 import { exDraw } from "./stateHelpers.js";
+import { runEffectStart } from "./effect.js";
 
 /* フェイズの宣言 */
 export const PHASES = [
@@ -30,6 +31,10 @@ export function dispatch(action){
 
     case "move_energy":
       result = moveToEnergy(action.card, action.slot);
+      break;
+
+    case "activate_effect":
+      result = runEffectStart(action.card, action.effectIndex);
       break;
 
     case "attack":

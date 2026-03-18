@@ -134,3 +134,10 @@ export function exDraw(){
 
   return true;
 }
+
+/* カード定義を取得 */
+export function getCardBase(cardId){
+  const card = gameState.cards[cardId];
+  if(!card) return null;
+  return cardDB[card.cardId];
+}

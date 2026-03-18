@@ -1,10 +1,11 @@
 import { gameState } from "../engine/gameState.js";
 import { cardDB } from "../data/cards.js";
 import { dispatch } from "../engine/engine.js";
-import { getEnergy, canPlay } from "../engine/stateHelpers.js";
+import { getEnergy, canPlay, getCardBase } from "../engine/stateHelpers.js";
 import { getNextPhase } from "../engine/phases.js";
 import { canAttack, canBlock } from "../engine/battle.js";
 import { canMove } from "../engine/move.js";
+import { checkEffectCondition, canUseAnyEffect } from "../engine/effect.js";
 
 /* カード描画 */
 function createCardView(cardId){
@@ -49,6 +50,15 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
     if(cardId !== null){
       const cardView = createCardView(cardId);
       cardView.id = "card-" + cardId;
+
+      /* 効果発動可能 */
+      if(
+        gameState.phase === "main" &&
+        canUseAnyEffect(cardId)
+      ){
+        cardView.classList.add("card-effectable");
+      }
+
       div.appendChild(cardView);
     }
 
@@ -118,7 +128,60 @@ function renderSlots(containerId, slots, clickable=false, playType=null){
     /* クリック処理 */
     if(clickable){
       div.onclick = ()=>{
+        console.log("CLICK", gameState.phase, cardId);
+        /* ---------- 起動効果 ---------- */
+        if(
+          gameState.phase === "main" &&
+          cardId !== null
+        ){
+          const baseCard = getCardBase(cardId);
 
+          if(baseCard && baseCard.effects && baseCard.effects.length > 0){
+
+            // 攻撃と同じ：メニュー表示
+            gameState.effectMenuCard = cardId;
+
+            renderEffectMenu();
+            return;
+          }
+        }
+
+        // コスト：手札破棄
+        if(gameState.effect.mode === "select_hand_cost"){
+          moveCard(
+            gameState.currentPlayer,
+            cardId,
+            "hand",
+            "trash"
+          );
+
+          gameState.effect.data.costDiscard--;
+
+          if(gameState.effect.data.costDiscard <= 0){
+            gameState.effect.mode = null;
+            runEffect();
+          }
+
+          render();
+          return;
+        }
+
+        // 効果：対象選択（フロント）
+        if(gameState.effect.mode === "select_target"){
+
+          const source = gameState.effect.source;
+
+          if(
+            player.frontLine.includes(cardId) &&
+            cardId !== source
+          ){
+            gameState.effect.data.target = cardId;
+            gameState.effect.step = 1;
+            runEffect();
+          }
+
+          return;
+        }
         /* ---------- 移動 ---------- */
         if(gameState.phase === "move"){
 
@@ -348,6 +411,7 @@ function updateSelected(){
 
 }
 
+/* 攻撃メニュー */
 function renderAttackMenu(){
   /* 既存メニュー削除 */
   document.querySelectorAll(".attack-menu").forEach(e=>e.remove());
@@ -392,6 +456,79 @@ function renderAttackMenu(){
   menu.appendChild(cancelBtn);
 
   cardEl.appendChild(menu);
+}
+
+/* 効果選択メニュー */
+function renderEffectMenu(){
+
+  document.querySelectorAll(".effect-menu").forEach(e=>e.remove());
+
+  const cardId = gameState.effectMenuCard;
+  if(cardId === null) return;
+
+  const cardEl = document.getElementById("card-" + cardId);
+  if(!cardEl) return;
+
+  const baseCard = getCardBase(cardId);
+  if(!baseCard || !baseCard.effects) return;
+
+  const menu = document.createElement("div");
+  menu.className = "effect-menu";
+
+  const rect = cardEl.getBoundingClientRect();
+
+  menu.style.position = "fixed";
+  menu.style.left = rect.right + "px";
+  menu.style.top = rect.top + "px";
+
+  menu.onclick = (e)=> e.stopPropagation();
+
+  baseCard.effects.forEach((effect, index) => {
+
+    if(effect.type !== "activate_main") return;
+
+    const btn = document.createElement("button");
+    btn.textContent = effect.label || effect.id;
+
+    /* 発動できるか */
+    const canUse = checkEffectCondition(cardId, effect);
+
+    if(!canUse){
+      btn.disabled = true;
+    }
+
+    btn.onclick = (e)=>{
+      e.stopPropagation();
+
+      if(!canUse) return;
+
+      dispatch({
+        type:"activate_effect",
+        card: cardId,
+        effectIndex: index
+      });
+
+      gameState.effectMenuCard = null;
+      render();
+    };
+
+    menu.appendChild(btn);
+  });
+
+  /* キャンセル */
+  const cancelBtn = document.createElement("button");
+  cancelBtn.textContent = "キャンセル";
+
+  cancelBtn.onclick = (e)=>{
+    e.stopPropagation();
+    gameState.effectMenuCard = null;
+    render();
+  };
+
+  menu.appendChild(cancelBtn);
+
+  document.body.appendChild(menu);
+  console.log("menu children", menu.children.length);
 }
 
 /* メイン描画 */
@@ -439,6 +576,7 @@ export function render(){
   updateSelected();
 
   renderAttackMenu();
+  renderEffectMenu();
 
   const next = getNextPhase();
   const btn = document.getElementById("phaseButton");

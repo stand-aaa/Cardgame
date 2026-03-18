@@ -1,16 +1,17 @@
 > tree /f
 C:.
-│  bug.txt
 │  index.html
 │  main.js
+│  memo.txt
 │  README.md
-│
+│  
 ├─data
 │      cards.js
-│
+│      
 ├─engine
 │      battle.js
 │      cardFactory.js
+│      effect.js
 │      engine.js
 │      gameState.js
 │      move.js

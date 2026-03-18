@@ -60,6 +60,13 @@
   outline:3px solid cyan;
 }
 
+/* 効果発動可能 */
+.card-effectable {
+  outline: 3px solid #0f0;
+  box-shadow: 0 0 10px #0f0;
+  border-radius: 8px;
+}
+
 /* 移動可能(移動先) */
 .slot-movable{
   outline:3px solid cyan;
@@ -127,6 +134,17 @@
   padding:5px;
   display:flex;
   gap:5px;
+}
+
+.effect-menu {
+  display: flex;
+  flex-direction: column; 
+  gap: 4px;
+
+  background: #222;
+  border: 1px solid #aaa;
+  padding: 4px;
+  z-index: 9999;
 }
 </style>
 
@@ -200,6 +218,7 @@
 </div>
 
 <div id="attackMenu" class="context-menu"></div>
+<div id="effectMenu"></div>
 
 <div id="overlay"
 onclick="this.style.display='none'"

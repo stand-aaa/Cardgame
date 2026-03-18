@@ -14,7 +14,26 @@ export const cardDB = {
     apCost:1,
     energyCost:1,
     energy:2,
-    power:3000
+    power:3000,
+    effects: [
+      {
+        type: "activate_main",
+        id: "buff_ally_1000",
+        label: "他の味方1体のBP+1000",
+        condition: {
+          notRested: true
+        },
+        cost: [
+          { type: "discard", value: 1 }
+        ]
+      },
+      {
+        type: "activate_main",
+        id: "draw_then_discard",
+        label: "1枚引いて1枚捨てる",
+
+      }
+    ]
   },
   3:{
     name:"King",
